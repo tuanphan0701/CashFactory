@@ -38,7 +38,21 @@ services:
                 ipv4_address: 172.106.0.11
     #End of Portainer + Webserver section
 
-   
+    #Start of Earnapp section (remove this if Earnapp not wanted)
+    Earnapp:
+        depends_on:
+            - Portainer
+            - Webserver
+        image: fazalfarhan01/earnapp
+        volumes:
+            - /sys/fs/cgroup:/sys/fs/cgroup:ro
+            - earnapp-data:/etc/earnapp
+        privileged: true
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.106.0.20
+    #End of Earnapp section
 
     #Start of HoneyGain section (remove this if HoneyGain not wanted)
     # variables to define in .env file :
@@ -57,9 +71,67 @@ services:
                 ipv4_address: 172.106.0.30
     #End of HoneyGain section
 
-  
+    #Start of IproyalPawns section (remove this if IproyalPawns not wanted)
+    # variables to define in .env file :
+    # IPROYALPAWNS_EMAIL : Your IproyalPawns account email
+    # IPROYALPAWNS_PASSWD : Your IproyalPawns account password 
+    # DEVICE_NAME : This computer name (for display on dashboard)
+    IproyalPawns:
+        depends_on:
+            - Portainer
+            - Webserver
+        image: iproyalpawns/pawns-cli:latest
+        command: -email=$IPROYALPAWNS_EMAIL -password='$IPROYALPAWNS_PASSWD' -device-name=$DEVICE_NAME -accept-tos
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.106.0.40
+    #End of IproyalPawns section
 
+    #Start of Peer2profit section (remove this if Peer2profit not wanted)
+    # variables to define in .env file :
+    # PEER2PROFIT_EMAIL : Your Peer2profit account email
+    Peer2profit:
+        depends_on:
+            - Portainer
+            - Webserver
+        image: peer2profit/peer2profit_x86_64:latest
+        restart: always
+        environment:
+            - P2P_EMAIL=$PEER2PROFIT_EMAIL
+        networks:
+            default:
+                ipv4_address: 172.106.0.50
+    #End of Peer2profit section
 
+    #Start of Packetstream section (remove this if Packetstream not wanted)
+    # variables to define in .env file :
+    # PACKETSTREAM_CID : Your Packetstream CID (available in packetstream dashboard)
+    Packetstream_PsClient:
+        depends_on:
+            - Portainer
+            - Webserver
+        image: packetstream/psclient:latest
+        restart: always
+        environment:
+            - CID=$PACKETSTREAM_CID
+        networks:
+            default:
+                ipv4_address: 172.106.0.60
+    Packetstream_Watchtower:
+        depends_on:
+            - Portainer
+            - Webserver
+            - Packetstream_PsClient
+        image: containrrr/watchtower
+        command: --cleanup --include-stopped --revive-stopped --interval 60 ${_COMPOSE_PROJECT_NAME}_Packetstream_PsClient_${_COMPOSE_PROJECT_STACK_ID}
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        restart: always
+        networks:
+            default:
+                ipv4_address: 172.106.0.61
+    #End of Packetstream section
 
 volumes:
     portainer_data:
